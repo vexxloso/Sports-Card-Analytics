@@ -88,6 +88,14 @@ _ebay_token: str | None = None
 _ebay_token_expiry = 0.0
 
 
+def _env_flag(name: str, default: bool = True) -> bool:
+    """True unless env is explicitly false-like (opt-out)."""
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    return str(raw).strip().lower() not in ("0", "false", "no", "off", "n")
+
+
 def _http_timeout_tuple() -> tuple[float, float]:
     """(connect, read) seconds — long read helps large Browse responses on slow VPS links."""
     read = float(os.getenv("EBAY_HTTP_READ_TIMEOUT_SEC", "120"))
@@ -224,7 +232,8 @@ def load_settings() -> dict[str, Any]:
         "yes",
     )
     max_consecutive_skips = int(os.getenv("EBAY_MAX_CONSECUTIVE_PAGE_SKIPS", "8"))
-    run_daily = os.getenv("RUN_DAILY", "").lower() in ("1", "true", "yes")
+    # Default True: VPS keeps process alive and runs on schedule (opt out with RUN_DAILY=false).
+    run_daily = _env_flag("RUN_DAILY", True)
     run_hour_utc = int(os.getenv("RUN_HOUR_UTC", "0"))
     run_minute_utc = int(os.getenv("RUN_MINUTE_UTC", "0"))
     return {
@@ -647,6 +656,9 @@ def run_forever_daily() -> None:
 
 
 def main() -> None:
+    if "--once" in sys.argv:
+        run_once()
+        return
     cfg = load_settings()
     if cfg["run_daily"]:
         run_forever_daily()

@@ -5,3 +5,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 guide.md
+node_modules/
+server/node_modules/
+client/node_modules/
+client/dist/
+dist/
+npm-debug.log*
