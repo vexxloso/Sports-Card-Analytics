@@ -3,7 +3,9 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, "..", "");
-  const apiTarget = env.VITE_API_URL || "http://127.0.0.1:5000";
+  /** Dev server + `vite preview` proxy: where Express runs (e.g. VPS). Not baked into the client bundle. */
+  const apiProxyTarget =
+    env.API_PROXY_TARGET || env.VITE_API_URL || "http://127.0.0.1:5000";
   return {
     plugins: [react()],
     envDir: "..",
@@ -13,7 +15,7 @@ export default defineConfig(({ mode }) => {
       strictPort: false,
       proxy: {
         "/api": {
-          target: apiTarget,
+          target: apiProxyTarget,
           changeOrigin: true,
         },
       },
@@ -21,6 +23,13 @@ export default defineConfig(({ mode }) => {
     preview: {
       host: true,
       port: 4173,
+      strictPort: false,
+      proxy: {
+        "/api": {
+          target: apiProxyTarget,
+          changeOrigin: true,
+        },
+      },
     },
   };
 });

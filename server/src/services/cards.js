@@ -11,6 +11,9 @@ function defaultPreview() {
   return {
     preview_image_url: null,
     preview_listing_url: null,
+    seller_username: null,
+    seller_feedback_percentage: null,
+    seller_feedback_score: null,
     flags: {
       has_autograph: false,
       has_grade_or_auth: false,
@@ -22,6 +25,12 @@ function defaultPreview() {
     },
     sample_listing_fetched_at: null,
   };
+}
+
+function toNumberOrNull(v) {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 /**
@@ -43,6 +52,11 @@ async function fetchPreviewsForKeys(db, keySet) {
           title: 1,
           image_url: 1,
           item_web_url: 1,
+          seller_username: 1,
+          seller_feedback_percentage: 1,
+          seller_feedback_score: 1,
+          seller_feedback_percentag: 1,
+          seller_feedback_socre: 1,
           has_autograph: 1,
           has_grade_or_auth: 1,
           keyword_flags: 1,
@@ -58,6 +72,13 @@ async function fetchPreviewsForKeys(db, keySet) {
     out.set(key, {
       preview_image_url: row.image_url || null,
       preview_listing_url: row.item_web_url || null,
+      seller_username: row.seller_username || null,
+      seller_feedback_percentage: toNumberOrNull(
+        row.seller_feedback_percentage ?? row.seller_feedback_percentag
+      ),
+      seller_feedback_score: toNumberOrNull(
+        row.seller_feedback_score ?? row.seller_feedback_socre
+      ),
       flags: {
         has_autograph: !!row.has_autograph,
         has_grade_or_auth: !!row.has_grade_or_auth,

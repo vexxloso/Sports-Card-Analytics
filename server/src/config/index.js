@@ -1,9 +1,29 @@
+const path = require("path");
+const fs = require("fs");
+
 require("./loadEnv");
 
 function req(name, fallback = "") {
   const v = process.env[name];
   return v != null && String(v).trim() !== "" ? String(v).trim() : fallback;
 }
+
+/** Absolute path to Vite `client/dist`, or "" if missing / not configured. */
+function resolveWebDist() {
+  const explicit = req("WEB_DIST", "");
+  if (explicit) {
+    const abs = path.resolve(explicit);
+    return fs.existsSync(abs) ? abs : "";
+  }
+  const repoClientDist = path.resolve(__dirname, "..", "..", "..", "client", "dist");
+  if (fs.existsSync(repoClientDist)) return repoClientDist;
+  return "";
+}
+
+const clientOrigins = req("CLIENT_ORIGIN", "http://localhost:5173")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 module.exports = {
   port: parseInt(req("API_PORT", "5000"), 10) || 5000,
@@ -13,7 +33,10 @@ module.exports = {
   mongoDb: req("MONGODB_DB", "sports_cards"),
   ebayItemsCollection: req("MONGODB_COLLECTION", "ebay_items"),
   cardsCollection: req("MONGODB_CARDS_COLLECTION", "cards"),
-  clientOrigin: req("CLIENT_ORIGIN", "http://localhost:5173"),
+  /** @deprecated use clientOrigins */
+  clientOrigin: clientOrigins[0] || "http://localhost:5173",
+  clientOrigins,
+  webDist: resolveWebDist(),
   ebayMarketplaceId: req("EBAY_MARKETPLACE_ID", "EBAY-US"),
   ebaySearchQuery: req("EBAY_SEARCH_QUERY", ""),
   moversMinCount: Math.max(

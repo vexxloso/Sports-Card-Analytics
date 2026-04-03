@@ -1,14 +1,30 @@
 const BASE = import.meta.env.VITE_API_URL || "";
+const REQUEST_TIMEOUT_MS = 15_000;
 
 async function getJson(path) {
-  const r = await fetch(`${BASE}${path}`, {
-    headers: { Accept: "application/json" },
-  });
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error(`${r.status} ${t || r.statusText}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const r = await fetch(`${BASE}${path}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!r.ok) {
+      const t = await r.text();
+      throw new Error(`${r.status} ${t || r.statusText}`);
+    }
+    return r.json();
+  } catch (e) {
+    if (e?.name === "AbortError") {
+      throw new Error(
+        `Request timeout after ${REQUEST_TIMEOUT_MS / 1000}s. Check API server and SSH tunnel.`
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  return r.json();
 }
 
 export function fetchMeta() {
